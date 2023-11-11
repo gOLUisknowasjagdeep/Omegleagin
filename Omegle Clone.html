@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omegleagin</title>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+}
+
+header, footer {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+#chat-icon {
+    fill: white;
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+}
+
+#app {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 90%;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+#app:hover {
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+}
+
+#chat-box {
+    flex-grow: 1;
+    height: 200px;
+    overflow-y: scroll;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
+    transition: border 0.3s ease;
+}
+
+#chat-box:hover {
+    border-color: #666;
+}
+
+#message-input, #send-button, #end-call-button, #next-button, #video-call-button {
+    padding: 8px;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+    margin-right: 10px;
+    transition: background-color 0.3s ease;
+}
+
+#message-input {
+    flex-grow: 1;
+    margin-right: 0; /* Adjusted margin to align with the buttons */
+}
+
+#send-button, #end-call-button, #next-button, #video-call-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#send-button:hover, #end-call-button:hover, #next-button:hover, #video-call-button:hover {
+    background-color: #45a049;
+}
+
+#status {
+    margin-top: 10px;
+    font-style: italic;
+    color: #777;
+}
+
+footer {
+    display: flex;
+    justify-content: center;
+}
+
+footer button {
+    margin: 5px;
+}
+
+#local-video, #remote-video {
+    width: 100%;
+    max-width: 300px;
+    margin-top: 10px;
+}
+        /* ... (same styles as before) ... */
+        #chat-box-container {
+            display: none;
+            transition: height 0.3s ease;
+        }
+
+        #chat-box-container.open {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <img id="chat-icon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 2H4C2.9 2 2 2.9 2 4v16l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 11H6l-2 2V4h16v9zm-3-3h-1V8h-2v2h-1.5V8H8V5h10v5z'/%3E%3C/svg%3E" alt="Chat Icon">
+            <h1>Omegle Clone</h1>
+        </div>
+        <button id="toggle-chat-button">Chat</button>
+    </header>
+    
+    <div id="app">
+        <div id="chat-box-container">
+            <div id="chat-box"></div>
+            <div style="display: flex; align-items: center;">
+                <input type="text" id="message-input" placeholder="Type your message...">
+                <button id="send-button">Send</button>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <button id="video-call-button">Video Call</button>
+                <button id="end-call-button">End Call</button>
+                <button id="next-button">Next</button>
+                <!-- <button id="video-call-button">Video Call</button> -->
+            </div>
+            <div id="status">Connecting...</div>
+            <video id="local-video" autoplay playsinline muted></video>
+            <video id="remote-video" autoplay playsinline></video>
+        </div>
+    </div>
+
+    <footer>
+        <!-- Additional footer content if needed -->
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const chatBoxContainer = document.getElementById("chat-box-container");
+            const chatBox = document.getElementById("chat-box");
+            const messageInput = document.getElementById("message-input");
+            const sendButton = document.getElementById("send-button");
+            const endCallButton = document.getElementById("end-call-button");
+            const videoCallButton = document.getElementById("video-call-button");
+            const localVideo = document.getElementById("local-video");
+            const remoteVideo = document.getElementById("remote-video");
+            const statusElement = document.getElementById("status");
+            const toggleChatButton = document.getElementById("toggle-chat-button");
+
+            let isConnected = false;
+            let isCalling = false;
+            let localStream; // Store the local stream to stop it when needed
+
+            sendButton.addEventListener("click", sendMessage);
+            endCallButton.addEventListener("click", endCall);
+            videoCallButton.addEventListener("click", initiateVideoCall);
+            toggleChatButton.addEventListener("click", toggleChat);
+
+            function sendMessage() {
+                const message = messageInput.value;
+                if (message.trim() !== "") {
+                    appendMessage("You: " + message);
+                    // Implement code to send message to the server and handle the response
+                    // For simplicity, we're just appending the message to the chat box here
+                    messageInput.value = "";
+                }
+            }
+
+            function endCall() {
+                if (isCalling) {
+                    // Stop the local video stream
+                    if (localStream) {
+                        localStream.getTracks().forEach(track => track.stop());
+                        localVideo.srcObject = null;
+                    }
+
+                    // Implement code to end the call
+                    console.log("Call ended");
+
+                    // Update UI
+                    isCalling = false;
+                    statusElement.textContent = "Call disconnected";
+                }
+            }
+
+            function initiateVideoCall() {
+                if (isCalling) {
+                    endCall();
+                } else {
+                    // Implement code to initiate a video call using WebRTC
+                    // This would involve signaling, peer connection setup, etc.
+                    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                        .then((stream) => {
+                            localStream = stream;
+                            localVideo.srcObject = stream;
+                            isCalling = true;
+                            statusElement.textContent = "Video call in progress...";
+                        })
+                        .catch((error) => {
+                            console.error("Error accessing media devices:", error);
+                        });
+                }
+            }
+
+            function toggleChat() {
+                chatBoxContainer.classList.toggle("open");
+            }
+
+            function appendMessage(message) {
+                const messageElement = document.createElement("div");
+                messageElement.textContent = message;
+                chatBox.appendChild(messageElement);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            // Simulate connection to the server
+            setTimeout(() => {
+                isConnected = true;
+                statusElement.textContent = "Connected";
+            }, 2000);
+
+            // Implement code for connecting to the server and handling incoming messages
+        });
+    </script>
+</body>
+</html>
